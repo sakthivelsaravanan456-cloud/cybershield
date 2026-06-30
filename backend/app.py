@@ -10,13 +10,18 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.path.join(BASE_DIR, "database.db")
-FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "frontend"))
+
+# Frontend files are now in project root
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+
+# Render provides PORT automatically
 PORT = int(os.environ.get("PORT", "5000"))
 
 os.chdir(BASE_DIR)
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
 app.config["CORS_HEADERS"] = "Content-Type"
+
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 
@@ -54,37 +59,67 @@ def get_auth_payload():
 def authenticate_user(email, password):
     if not email or not password:
         return None
+
     db = get_db()
     user = db.execute(
         "SELECT id, name, email, password_hash, role FROM users WHERE email = ?",
         (email,),
     ).fetchone()
+
     if user is None:
         return None
+
     if not check_password_hash(user["password_hash"], password):
         return None
+
     return user
 
 
 def get_admin_user():
     email, password = get_auth_payload()
     user = authenticate_user(email, password)
+
     if user is None or str(user["role"]).lower() != "admin":
         return None
+
     return user
 
 
 def create_user_progress(user_id):
     db = get_db()
+
+    existing = db.execute(
+        "SELECT id FROM progress WHERE user_id = ?",
+        (user_id,),
+    ).fetchone()
+
+    if existing:
+        return
+
     db.execute(
-        "INSERT INTO progress (user_id, completion, xp, streak, last_login, last_reward_claim, achievements, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (user_id, 0, 0, 0, None, None, json.dumps({}), datetime.utcnow().isoformat()),
+        """
+        INSERT INTO progress
+        (user_id, completion, xp, streak, last_login, last_reward_claim, achievements, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            0,
+            0,
+            0,
+            None,
+            None,
+            json.dumps({}),
+            datetime.utcnow().isoformat(),
+        ),
     )
+
     db.commit()
 
 
 def init_db():
     db = get_db()
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
@@ -97,6 +132,7 @@ def init_db():
         )
         """
     )
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS progress (
@@ -113,6 +149,7 @@ def init_db():
         )
         """
     )
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS lessons (
@@ -125,6 +162,7 @@ def init_db():
         )
         """
     )
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS videos (
@@ -138,6 +176,7 @@ def init_db():
         )
         """
     )
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS quiz_questions (
@@ -151,6 +190,7 @@ def init_db():
         )
         """
     )
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS certificates (
@@ -162,6 +202,7 @@ def init_db():
         )
         """
     )
+
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS notifications (
@@ -174,13 +215,19 @@ def init_db():
         )
         """
     )
+
     db.commit()
     upgrade_quiz_questions_table()
 
 
 def upgrade_quiz_questions_table():
     db = get_db()
-    existing_columns = [row[1] for row in db.execute("PRAGMA table_info(quiz_questions)").fetchall()]
+
+    existing_columns = [
+        row[1]
+        for row in db.execute("PRAGMA table_info(quiz_questions)").fetchall()
+    ]
+
     columns_to_add = {
         "difficulty": "TEXT NOT NULL DEFAULT 'Beginner'",
         "question_type": "TEXT NOT NULL DEFAULT 'MCQ'",
@@ -189,15 +236,20 @@ def upgrade_quiz_questions_table():
         "cybersecurity_tip": "TEXT",
         "related_training": "TEXT",
     }
+
     for column_name, column_def in columns_to_add.items():
         if column_name not in existing_columns:
-            db.execute(f"ALTER TABLE quiz_questions ADD COLUMN {column_name} {column_def}")
+            db.execute(
+                f"ALTER TABLE quiz_questions ADD COLUMN {column_name} {column_def}"
+            )
+
     db.commit()
 
 
 @app.teardown_appcontext
 def close_db(exception=None):
     db = getattr(g, "_database", None)
+
     if db is not None:
         db.close()
 
@@ -211,13 +263,21 @@ def home():
     return app.send_static_file("index.html")
 
 
+@app.route("/health")
+def health():
+    return jsonify({"message": "CyberShield backend is running."}), 200
+
+
 @app.route("/<path:filename>")
 def serve_static(filename):
     return app.send_static_file(filename)
 
 
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["POST", "OPTIONS"])
 def register():
+    if request.method == "OPTIONS":
+        return jsonify({"message": "OK"}), 200
+
     try:
         data = request.get_json(force=True) or {}
     except Exception as exc:
@@ -229,55 +289,86 @@ def register():
     role = str(data.get("role", "Technical")).strip() or "Technical"
 
     if not name or not email or not password:
-        return jsonify({"message": "Name, email, and password are required.", "received": data}), 400
+        return jsonify({
+            "message": "Name, email, and password are required.",
+            "received": data
+        }), 400
 
     if "@" not in email or "." not in email:
         return jsonify({"message": "Enter a valid email address."}), 400
 
     db = get_db()
-    existing = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+
+    existing = db.execute(
+        "SELECT id FROM users WHERE email = ?",
+        (email,),
+    ).fetchone()
+
     if existing:
         return jsonify({"message": "That email address is already registered."}), 409
 
-    password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
-    db.execute(
-        "INSERT INTO users (name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)",
-        (name, email, password_hash, role, datetime.utcnow().isoformat()),
+    password_hash = generate_password_hash(
+        password,
+        method="pbkdf2:sha256",
+        salt_length=16
     )
+
+    db.execute(
+        """
+        INSERT INTO users (name, email, password_hash, role, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            name,
+            email,
+            password_hash,
+            role,
+            datetime.utcnow().isoformat(),
+        ),
+    )
+
     db.commit()
 
-    user_row = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    user_row = db.execute(
+        "SELECT id FROM users WHERE email = ?",
+        (email,),
+    ).fetchone()
+
     if user_row:
         create_user_progress(user_row["id"])
 
     return jsonify({
         "message": "Registered successfully.",
-        "user": {"name": name, "email": email, "role": role},
+        "user": {
+            "name": name,
+            "email": email,
+            "role": role
+        },
     }), 201
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST", "OPTIONS"])
 def login():
+    if request.method == "OPTIONS":
+        return jsonify({"message": "OK"}), 200
+
     data = request.get_json(force=True) or {}
 
-    email = data.get("email", "").strip().lower()
-    password = data.get("password", "")
+    email = str(data.get("email", "")).strip().lower()
+    password = str(data.get("password", ""))
 
     if not email or not password:
         return jsonify({"message": "Email and password are required."}), 400
 
-    db = get_db()
-    user = db.execute(
-        "SELECT id, name, email, password_hash, role FROM users WHERE email = ?",
-        (email,),
-    ).fetchone()
+    user = authenticate_user(email, password)
 
-    if user is None or not check_password_hash(user["password_hash"], password):
+    if user is None:
         return jsonify({"message": "Invalid email or password."}), 401
 
     return jsonify({
         "message": "Login successful.",
         "user": {
+            "id": user["id"],
             "name": user["name"],
             "email": user["email"],
             "role": user["role"],
@@ -291,21 +382,32 @@ def get_quiz_questions():
     count = int(request.args.get("count", 10)) if request.args.get("count") else 10
 
     if level not in ("Beginner", "Intermediate", "Advanced"):
-        return jsonify({"message": "Quiz level must be Beginner, Intermediate, or Advanced."}), 400
+        return jsonify({
+            "message": "Quiz level must be Beginner, Intermediate, or Advanced."
+        }), 400
 
     db = get_db()
+
     rows = db.execute(
-        "SELECT * FROM quiz_questions WHERE difficulty = ? ORDER BY RANDOM() LIMIT ?",
+        """
+        SELECT * FROM quiz_questions
+        WHERE difficulty = ?
+        ORDER BY RANDOM()
+        LIMIT ?
+        """,
         (level, count),
     ).fetchall()
 
     questions = []
+
     for row in rows:
         question = row_to_dict(row)
+
         try:
             question["options"] = json.loads(question["options"])
         except Exception:
             question["options"] = []
+
         questions.append(question)
 
     return jsonify({"questions": questions}), 200
@@ -314,41 +416,70 @@ def get_quiz_questions():
 @app.route("/admin/users", methods=["GET"])
 def admin_list_users():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
-    users = db.execute("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC").fetchall()
+
+    users = db.execute(
+        "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC"
+    ).fetchall()
+
     return jsonify({"users": [row_to_dict(row) for row in users]}), 200
 
 
 @app.route("/admin/users/<int:user_id>/reset", methods=["POST"])
 def admin_reset_user_progress(user_id):
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     db.execute(
-        "UPDATE progress SET completion = 0, xp = 0, streak = 0, last_login = NULL, last_reward_claim = NULL, achievements = ?, updated_at = ? WHERE user_id = ?",
-        (json.dumps({}), datetime.utcnow().isoformat(), user_id),
+        """
+        UPDATE progress
+        SET completion = 0,
+            xp = 0,
+            streak = 0,
+            last_login = NULL,
+            last_reward_claim = NULL,
+            achievements = ?,
+            updated_at = ?
+        WHERE user_id = ?
+        """,
+        (
+            json.dumps({}),
+            datetime.utcnow().isoformat(),
+            user_id,
+        ),
     )
+
     db.commit()
+
     return jsonify({"message": "User progress reset."}), 200
 
 
 @app.route("/admin/lessons", methods=["GET", "POST"])
 def admin_manage_lessons():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     if request.method == "GET":
-        lessons = db.execute("SELECT * FROM lessons ORDER BY created_at DESC").fetchall()
+        lessons = db.execute(
+            "SELECT * FROM lessons ORDER BY created_at DESC"
+        ).fetchall()
+
         return jsonify({"lessons": [row_to_dict(row) for row in lessons]}), 200
 
     data = request.get_json(force=True) or {}
+
     title = str(data.get("title", "")).strip()
     description = str(data.get("description", "")).strip()
     level = str(data.get("level", "")).strip() or "Technical"
@@ -358,25 +489,42 @@ def admin_manage_lessons():
         return jsonify({"message": "Title and description are required."}), 400
 
     db.execute(
-        "INSERT INTO lessons (title, description, level, video_url, created_at) VALUES (?, ?, ?, ?, ?)",
-        (title, description, level, video_url, datetime.utcnow().isoformat()),
+        """
+        INSERT INTO lessons (title, description, level, video_url, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            title,
+            description,
+            level,
+            video_url,
+            datetime.utcnow().isoformat(),
+        ),
     )
+
     db.commit()
+
     return jsonify({"message": "Lesson created."}), 201
 
 
 @app.route("/admin/videos", methods=["GET", "POST"])
 def admin_manage_videos():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     if request.method == "GET":
-        videos = db.execute("SELECT * FROM videos ORDER BY created_at DESC").fetchall()
+        videos = db.execute(
+            "SELECT * FROM videos ORDER BY created_at DESC"
+        ).fetchall()
+
         return jsonify({"videos": [row_to_dict(row) for row in videos]}), 200
 
     data = request.get_json(force=True) or {}
+
     lesson_id = data.get("lesson_id")
     title = str(data.get("title", "")).strip()
     url = str(data.get("url", "")).strip()
@@ -386,25 +534,42 @@ def admin_manage_videos():
         return jsonify({"message": "Title and URL are required."}), 400
 
     db.execute(
-        "INSERT INTO videos (lesson_id, title, url, duration, created_at) VALUES (?, ?, ?, ?, ?)",
-        (lesson_id, title, url, duration, datetime.utcnow().isoformat()),
+        """
+        INSERT INTO videos (lesson_id, title, url, duration, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            lesson_id,
+            title,
+            url,
+            duration,
+            datetime.utcnow().isoformat(),
+        ),
     )
+
     db.commit()
+
     return jsonify({"message": "Video created."}), 201
 
 
 @app.route("/admin/quizzes", methods=["GET", "POST"])
 def admin_manage_quizzes():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     if request.method == "GET":
-        quizzes = db.execute("SELECT * FROM quiz_questions ORDER BY created_at DESC").fetchall()
+        quizzes = db.execute(
+            "SELECT * FROM quiz_questions ORDER BY created_at DESC"
+        ).fetchall()
+
         return jsonify({"quizzes": [row_to_dict(row) for row in quizzes]}), 200
 
     data = request.get_json(force=True) or {}
+
     lesson_id = data.get("lesson_id")
     question = str(data.get("question", "")).strip()
     options = data.get("options")
@@ -417,13 +582,33 @@ def admin_manage_quizzes():
     related_training = str(data.get("related_training", "")).strip()
 
     if difficulty not in ("Beginner", "Intermediate", "Advanced"):
-        return jsonify({"message": "Difficulty must be Beginner, Intermediate, or Advanced."}), 400
+        return jsonify({
+            "message": "Difficulty must be Beginner, Intermediate, or Advanced."
+        }), 400
 
     if not question or not options or not answer:
-        return jsonify({"message": "Question, options, and answer are required."}), 400
+        return jsonify({
+            "message": "Question, options, and answer are required."
+        }), 400
 
     db.execute(
-        "INSERT INTO quiz_questions (lesson_id, question, options, answer, difficulty, question_type, image_url, explanation, cybersecurity_tip, related_training, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        """
+        INSERT INTO quiz_questions
+        (
+            lesson_id,
+            question,
+            options,
+            answer,
+            difficulty,
+            question_type,
+            image_url,
+            explanation,
+            cybersecurity_tip,
+            related_training,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
         (
             lesson_id,
             question,
@@ -438,22 +623,30 @@ def admin_manage_quizzes():
             datetime.utcnow().isoformat(),
         ),
     )
+
     db.commit()
+
     return jsonify({"message": "Quiz question created."}), 201
 
 
 @app.route("/admin/certificates", methods=["GET", "POST"])
 def admin_manage_certificates():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     if request.method == "GET":
-        certificates = db.execute("SELECT * FROM certificates ORDER BY created_at DESC").fetchall()
+        certificates = db.execute(
+            "SELECT * FROM certificates ORDER BY created_at DESC"
+        ).fetchall()
+
         return jsonify({"certificates": [row_to_dict(row) for row in certificates]}), 200
 
     data = request.get_json(force=True) or {}
+
     title = str(data.get("title", "")).strip()
     description = str(data.get("description", "")).strip()
     requirements = str(data.get("requirements", "")).strip()
@@ -462,25 +655,43 @@ def admin_manage_certificates():
         return jsonify({"message": "Title and description are required."}), 400
 
     db.execute(
-        "INSERT INTO certificates (title, description, requirements, created_at) VALUES (?, ?, ?, ?)",
-        (title, description, requirements, datetime.utcnow().isoformat()),
+        """
+        INSERT INTO certificates (title, description, requirements, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            title,
+            description,
+            requirements,
+            datetime.utcnow().isoformat(),
+        ),
     )
+
     db.commit()
+
     return jsonify({"message": "Certificate created."}), 201
 
 
 @app.route("/admin/notifications", methods=["GET", "POST"])
 def admin_manage_notifications():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     if request.method == "GET":
-        notifications = db.execute("SELECT * FROM notifications ORDER BY created_at DESC").fetchall()
-        return jsonify({"notifications": [row_to_dict(row) for row in notifications]}), 200
+        notifications = db.execute(
+            "SELECT * FROM notifications ORDER BY created_at DESC"
+        ).fetchall()
+
+        return jsonify({
+            "notifications": [row_to_dict(row) for row in notifications]
+        }), 200
 
     data = request.get_json(force=True) or {}
+
     title = str(data.get("title", "")).strip()
     message = str(data.get("message", "")).strip()
     target = str(data.get("target", "all")).strip()
@@ -489,24 +700,40 @@ def admin_manage_notifications():
         return jsonify({"message": "Title and message are required."}), 400
 
     db.execute(
-        "INSERT INTO notifications (title, message, target, created_at) VALUES (?, ?, ?, ?)",
-        (title, message, target, datetime.utcnow().isoformat()),
+        """
+        INSERT INTO notifications (title, message, target, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            title,
+            message,
+            target,
+            datetime.utcnow().isoformat(),
+        ),
     )
+
     db.commit()
+
     return jsonify({"message": "Notification created."}), 201
 
 
 @app.route("/admin/analytics", methods=["GET"])
 def admin_analytics():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
-    total_users = db.execute("SELECT COUNT(*) AS value FROM users").fetchone()["value"]
+
+    total_users = db.execute(
+        "SELECT COUNT(*) AS value FROM users"
+    ).fetchone()["value"]
+
     active_users = db.execute(
         "SELECT COUNT(*) AS value FROM progress WHERE completion > 0"
     ).fetchone()["value"]
+
     average_xp = db.execute(
         "SELECT AVG(xp) AS value FROM progress"
     ).fetchone()["value"] or 0
@@ -521,35 +748,64 @@ def admin_analytics():
 @app.route("/admin/leaderboard", methods=["GET"])
 def admin_leaderboard():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
+
     leaderboard_rows = db.execute(
-        "SELECT u.id, u.name, u.email, p.xp, p.completion FROM users u JOIN progress p ON u.id = p.user_id ORDER BY p.xp DESC, p.completion DESC LIMIT 10"
+        """
+        SELECT u.id, u.name, u.email, p.xp, p.completion
+        FROM users u
+        JOIN progress p ON u.id = p.user_id
+        ORDER BY p.xp DESC, p.completion DESC
+        LIMIT 10
+        """
     ).fetchall()
 
-    return jsonify({"leaderboard": [row_to_dict(row) for row in leaderboard_rows]}), 200
+    return jsonify({
+        "leaderboard": [row_to_dict(row) for row in leaderboard_rows]
+    }), 200
 
 
 @app.route("/admin/export/users", methods=["GET"])
 def admin_export_users():
     admin = get_admin_user()
+
     if admin is None:
         return jsonify({"message": "Admin credentials required."}), 401
 
     db = get_db()
-    users = db.execute("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC").fetchall()
+
+    users = db.execute(
+        "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC"
+    ).fetchall()
+
     output = io.StringIO()
     writer = csv.writer(output)
+
     writer.writerow(["id", "name", "email", "role", "created_at"])
+
     for user in users:
-        writer.writerow([user["id"], user["name"], user["email"], user["role"], user["created_at"]])
+        writer.writerow([
+            user["id"],
+            user["name"],
+            user["email"],
+            user["role"],
+            user["created_at"],
+        ])
 
     response = Response(output.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=users_export.csv"
+
     return response
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=PORT,
+        debug=False,
+        use_reloader=False
+    )
