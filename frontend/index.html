@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield | Cybersecurity Awareness</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="navbar-brand">
+            <span class="brand-icon">🛡</span>
+            <div>
+                <h1>CyberShield</h1>
+                <p class="subtitle">UK University Cyber Awareness</p>
+            </div>
+        </div>
+
+        <nav class="navbar-actions" aria-label="Primary navigation">
+            <button id="homeNavBtn" class="ghost-btn">Home</button>
+            <button id="loginNavBtn" class="ghost-btn">Login</button>
+            <button id="registerNavBtn" class="primary-btn">Register</button>
+            <button id="logoutBtn" class="ghost-btn hidden">Logout</button>
+        </nav>
+    </header>
+
+    <div id="offlineBanner" class="offline-banner hidden" role="status" aria-live="polite">
+        Backend unavailable — running in offline mode.
+    </div>
+
+    <div id="cookieConsent" class="cookie-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cookieConsentTitle">
+        <div class="cookie-modal-panel">
+            <h2 id="cookieConsentTitle">Privacy & Cookie Preferences</h2>
+            <p>CyberShield uses cookies to improve your experience, personalize content, and analyze traffic. Select your preferences to continue.</p>
+            <div class="cookie-options">
+                <div class="cookie-option">
+                    <strong>Essential</strong>
+                    <p>Required for site functionality and security.</p>
+                    <span class="cookie-tag">Always active</span>
+                </div>
+                <div class="cookie-option">
+                    <strong>Analytics</strong>
+                    <p>Helps us understand usage and improve lessons.</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="cookieAnalytics" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="cookie-option">
+                    <strong>Personalization</strong>
+                    <p>Delivers tailored recommendations and UI improvements.</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="cookiePersonalization" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="cookie-actions">
+                <button id="cookieReject" class="secondary-btn">Reject</button>
+                <button id="cookieCustomize" class="ghost-btn">Customize</button>
+                <button id="cookieAccept" class="primary-btn">Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <section id="homePage" class="app-section">
+            <div class="hero">
+                <div>
+                    <p class="eyebrow">Student Cybersecurity Training</p>
+                    <h1>Build secure habits for campus, study, and remote learning.</h1>
+                    <p class="hero-copy">CyberShield helps UK university students register, learn threat awareness, complete quizzes, and earn certificates.</p>
+                    <div class="hero-actions">
+                        <button id="ctaLoginBtn" class="secondary-btn">Login</button>
+                        <button id="ctaRegisterBtn" class="primary-btn">Register</button>
+                    </div>
+                </div>
+                <div class="hero-panel">
+                    <div class="stats-card">
+                        <p class="stats-label">Ready for</p>
+                        <h2>Industry security awareness</h2>
+                    </div>
+                    <div class="stats-card stats-card-alt">
+                        <p class="stats-label">Designed for</p>
+                        <h2>UK university students</h2>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="registerPage" class="app-section hidden">
+            <div class="form-card">
+                <h2>Create your account</h2>
+                <p class="section-description">Register with your university email to unlock training, quizzes, and progress tracking.</p>
+                <form id="registerForm" novalidate>
+                    <label for="regName">Full name</label>
+                    <input id="regName" name="name" type="text" placeholder="Jane Smith" autocomplete="name" required>
+
+                    <label for="regEmail">Email address</label>
+                    <input id="regEmail" name="email" type="email" placeholder="jane@university.ac.uk" autocomplete="email" required>
+
+                    <label for="regPassword">Password</label>
+                    <div class="password-field">
+                        <input id="regPassword" name="password" type="password" placeholder="Create a secure password" autocomplete="new-password" required>
+                        <button type="button" class="password-toggle" data-target="regPassword">Show</button>
+                    </div>
+                    <div id="passwordStrength" class="password-strength">Strength: <span>Enter a password</span></div>
+
+                    <label for="regConfirmPassword">Confirm password</label>
+                    <div class="password-field">
+                        <input id="regConfirmPassword" name="confirmPassword" type="password" placeholder="Confirm your password" autocomplete="new-password" required>
+                        <button type="button" class="password-toggle" data-target="regConfirmPassword">Show</button>
+                    </div>
+
+                    <label for="regRole">Study focus</label>
+                    <select id="regRole" name="role">
+                        <option value="Technical">Technical</option>
+                        <option value="Non Technical">Non Technical</option>
+                    </select>
+
+                    <button type="submit" class="primary-btn">Register</button>
+                    <p id="registerStatus" class="status-message" aria-live="polite"></p>
+                </form>
+            </div>
+        </section>
+
+        <section id="loginPage" class="app-section hidden">
+            <div class="form-card">
+                <h2>Student login</h2>
+                <p class="section-description">Access your dashboard and continue the awareness journey.</p>
+                <form id="loginForm" novalidate>
+                    <label for="loginEmail">Email address</label>
+                    <input id="loginEmail" name="email" type="email" placeholder="jane@university.ac.uk" autocomplete="username" required>
+
+                    <label for="loginPassword">Password</label>
+                    <div class="password-field">
+                        <input id="loginPassword" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+                        <button type="button" class="password-toggle" data-target="loginPassword">Show</button>
+                    </div>
+
+                    <label class="checkbox-field">
+                        <input id="rememberMe" type="checkbox" name="rememberMe">
+                        Remember me
+                    </label>
+
+                    <button type="submit" class="primary-btn">Login</button>
+                    <p id="loginStatus" class="status-message" aria-live="polite"></p>
+                </form>
+            </div>
+        </section>
+
+        <section id="dashboardPage" class="app-section hidden">
+            <div class="dashboard-header">
+                <div>
+                    <p class="eyebrow">Welcome back</p>
+                    <h2 id="welcomeText">Hi, student</h2>
+                    <p id="dashboardSubtitle">Continue your learning with secure training, quizzes and progress tracking.</p>
+                </div>
+                <div class="progress-summary">
+                    <span id="completionValue">0%</span>
+                    <span>completion</span>
+                </div>
+            </div>
+
+            <div class="grid badge-bar">
+                <div class="xp-panel">
+                    <p>XP points</p>
+                    <h3 id="xpValue">0</h3>
+                    <span>Level <strong id="userLevel">1</strong></span>
+                </div>
+                <div class="streak-panel">
+                    <p>Learning streak</p>
+                    <h3 id="streakValue">0 days</h3>
+                    <span>Daily login reward available</span>
+                </div>
+                <div class="reward-panel">
+                    <p>Daily reward</p>
+                    <h3 id="dailyRewardValue">+50 XP</h3>
+                    <button id="claimRewardBtn" class="secondary-btn">Claim reward</button>
+                </div>
+            </div>
+
+            <div class="grid achievement-bar">
+                <div class="achievement-summary card">
+                    <h3>Achievements</h3>
+                    <div class="achievement-pill" id="achievementFirstLesson">First lesson completed</div>
+                    <div class="achievement-pill" id="achievementStreak">3-day streak</div>
+                    <div class="achievement-pill" id="achievementQuizMaster">Quiz master</div>
+                    <div class="achievement-pill" id="achievementCertificate">Certificate earned</div>
+                </div>
+            </div>
+
+            <div class="grid dashboard-grid">
+                <article class="card action-card" id="trainingCard" tabindex="0">
+                    <h3>Training videos</h3>
+                    <p>Explore curated cybersecurity lessons for beginner through advanced learners.</p>
+                </article>
+                <article class="card action-card" id="quizCard" tabindex="0">
+                    <h3>Awareness quiz</h3>
+                    <p>Test your knowledge and track improvement through instant scoring.</p>
+                </article>
+                <article class="card action-card" id="progressCard" tabindex="0">
+                    <h3>Progress</h3>
+                    <p>View your completion score and see what’s next on the roadmap.</p>
+                </article>
+                <article class="card action-card" id="certificateCard" tabindex="0">
+                    <h3>Certificate</h3>
+                    <p>Earn a completion certificate designed for your university portfolio.</p>
+                </article>
+                <article class="card action-card hidden" id="adminCard" tabindex="0">
+                    <h3>Admin console</h3>
+                    <p>Manage users, lessons, quiz content, analytics and reports.</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="trainingPage" class="app-section hidden">
+            <div class="section-header">
+                <h2>Training library</h2>
+                <p>Watch awareness videos, complete lessons, and prepare for the quiz.</p>
+            </div>
+            <button class="secondary-btn back-btn" id="trainingBackBtn">Back to dashboard</button>
+            <div class="grid training-grid">
+                <article class="card training-level-card" id="trainingLevelBeginner">
+                    <div class="level-tag level-easy">🟢 Beginner</div>
+                    <h3>Beginner level</h3>
+                    <p>Foundational lessons for early cybersecurity awareness.</p>
+                    <button class="secondary-btn trainingCompleteBtn" data-level="Beginner">Mark complete</button>
+                    <p class="training-level-status" id="trainingStatusBeginner">Not completed</p>
+                </article>
+                <article class="card training-level-card" id="trainingLevelIntermediate">
+                    <div class="level-tag level-medium">🟡 Intermediate</div>
+                    <h3>Intermediate level</h3>
+                    <p>Deeper scenarios and applied risk awareness training.</p>
+                    <button class="secondary-btn trainingCompleteBtn" data-level="Intermediate">Mark complete</button>
+                    <p class="training-level-status" id="trainingStatusIntermediate">Not completed</p>
+                </article>
+                <article class="card training-level-card" id="trainingLevelAdvanced">
+                    <div class="level-tag level-hard">🔴 Advanced</div>
+                    <h3>Advanced level</h3>
+                    <p>Expert-level threat detection and incident response.</p>
+                    <button class="secondary-btn trainingCompleteBtn" data-level="Advanced">Mark complete</button>
+                    <p class="training-level-status" id="trainingStatusAdvanced">Not completed</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="trainingCompletePage" class="app-section hidden">
+            <div class="form-card result-card">
+                <h2>Training Completed Successfully</h2>
+                <p>You may now start the Quiz.</p>
+                <div class="quiz-actions">
+                    <button class="primary-btn" id="trainingCompleteContinueBtn">Start Quiz</button>
+                    <button class="secondary-btn" id="trainingCompleteDashboardBtn">Back to dashboard</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="quizPage" class="app-section hidden">
+            <div class="section-header">
+                <h2>Quiz challenge</h2>
+                <p>Select a level to begin your awareness assessment.</p>
+            </div>
+            <button class="secondary-btn back-btn" id="quizBackBtn">Back to dashboard</button>
+            <div class="grid quiz-level-grid">
+                <article class="card quiz-level-card level-unlocked" id="quizLevelBeginner" data-level="Beginner" tabindex="0">
+                    <div class="level-tag level-easy">🟢 Beginner</div>
+                    <p>Foundational questions for new learners.</p>
+                    <div class="quiz-level-status">Unlocked</div>
+                </article>
+                <article class="card quiz-level-card level-locked" id="quizLevelIntermediate" data-level="Intermediate" tabindex="0">
+                    <div class="level-tag level-medium">🟡 Intermediate</div>
+                    <p>Moderate questions building on beginner knowledge.</p>
+                    <div class="quiz-level-status">Locked</div>
+                    <span class="lock-icon">🔒</span>
+                </article>
+                <article class="card quiz-level-card level-locked" id="quizLevelAdvanced" data-level="Advanced" tabindex="0">
+                    <div class="level-tag level-hard">🔴 Advanced</div>
+                    <p>Challenging scenarios for experienced learners.</p>
+                    <div class="quiz-level-status">Locked</div>
+                    <span class="lock-icon">🔒</span>
+                </article>
+            </div>
+            <p id="quizLevelStatus" class="status-message" aria-live="polite"></p>
+        </section>
+
+        <section id="quizSessionPage" class="app-section hidden">
+            <div class="section-header">
+                <h2>Quiz session</h2>
+                <p>Answer question-by-question, review before submission, and track your progress.</p>
+            </div>
+            <button class="secondary-btn back-btn" id="quizSessionBackBtn">Back to levels</button>
+            <div class="form-card quiz-card">
+                <div class="quiz-header">
+                    <div>
+                        <p class="quiz-meta-label">Time remaining</p>
+                        <strong id="quizTimer">10:00</strong>
+                    </div>
+                    <div>
+                        <p class="quiz-meta-label">Question</p>
+                        <strong id="quizCounter">0 / 0</strong>
+                    </div>
+                </div>
+                <div class="progress-bar quiz-progress-bar">
+                    <div id="quizProgressFill" class="progress-fill"></div>
+                </div>
+                <div id="quizQuestionImageWrapper" class="quiz-image hidden">
+                    <img id="quizQuestionImage" alt="Quiz question reference image">
+                </div>
+                <h3 id="quizQuestionText">Loading question...</h3>
+                <div id="quizOptionsContainer"></div>
+                <div class="quiz-actions quiz-navigation">
+                    <button class="secondary-btn" id="quizPrevBtn">Previous</button>
+                    <button class="secondary-btn" id="quizNextBtn">Next</button>
+                    <button class="ghost-btn" id="quizReviewBtn">Review answers</button>
+                    <button class="primary-btn" id="quizSubmitBtn">Submit quiz</button>
+                </div>
+                <p id="quizSaveStatus" class="status-message" aria-live="polite"></p>
+                <p id="quizStatus" class="status-message" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <section id="quizReviewPage" class="app-section hidden">
+            <div class="section-header">
+                <h2>Review answers</h2>
+                <p>Confirm your selections before submitting the quiz.</p>
+            </div>
+            <button class="secondary-btn back-btn" id="quizReviewBackBtn">Back to quiz</button>
+            <div class="form-card review-card">
+                <div id="quizReviewList"></div>
+                <div class="quiz-actions quiz-navigation">
+                    <button class="secondary-btn" id="quizEditBtn">Edit answers</button>
+                    <button class="primary-btn" id="quizConfirmSubmitBtn">Submit quiz</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="resultPage" class="app-section hidden">
+            <div class="form-card result-card">
+                <h2>Quiz result</h2>
+                <div class="results-grid">
+                    <div><strong>Score</strong><p id="resultScore">0 / 0</p></div>
+                    <div><strong>Percentage</strong><p id="resultPercentage">0%</p></div>
+                    <div><strong>Correct</strong><p id="resultCorrect">0</p></div>
+                    <div><strong>Wrong</strong><p id="resultWrong">0</p></div>
+                    <div><strong>Time taken</strong><p id="resultTime">00:00</p></div>
+                    <div><strong>Status</strong><p id="resultStatus">Pending</p></div>
+                </div>
+                <div class="result-summary-card">
+                    <p id="resultBadge">Badge earned: None</p>
+                    <p id="resultUnlock">Next level unlocked: None</p>
+                </div>
+                <div id="resultDetails"></div>
+                <div class="quiz-actions quiz-navigation">
+                    <button class="secondary-btn" id="resultBackBtn">Return to dashboard</button>
+                    <button class="secondary-btn hidden" id="quizRetakeBtn">Retake quiz</button>
+                    <button class="primary-btn hidden" id="quizContinueBtn">Continue to next level</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="progressPage" class="app-section hidden">
+            <div class="section-header">
+                <h2>Progress</h2>
+                <p>Review your completion rate and remaining activities.</p>
+            </div>
+            <button class="secondary-btn back-btn" id="progressBackBtn">Back to dashboard</button>
+            <div class="form-card progress-card">
+                <div class="progress-panel">
+                    <p class="progress-label">Overall completion</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">70% complete</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="certificatePage" class="app-section hidden">
+            <button class="secondary-btn back-btn" id="certificateBackBtn">Back to dashboard</button>
+            <div class="form-card certificate-card">
+                <h2>Certificate of completion</h2>
+                <p>Presented to</p>
+                <h3 id="certificateName">Student Name</h3>
+                <p>CyberShield Awareness Program</p>
+            </div>
+        </section>
+
+        <section id="adminPage" class="app-section hidden">
+            <div class="section-header admin-header">
+                <div>
+                    <p class="eyebrow">Admin portal</p>
+                    <h2>Management console</h2>
+                    <p>Future admin tools for user management, content controls, analytics, and exports.</p>
+                </div>
+                <button class="secondary-btn back-btn" id="adminBackBtn">Back to dashboard</button>
+            </div>
+            <div class="grid admin-grid">
+                <article class="card admin-card admin-action-card" id="adminUsersCard">
+                    <h3>Manage users</h3>
+                    <p>View and reset learner progress.</p>
+                    <button id="adminLoadUsers" class="secondary-btn">Load users</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminLessonsCard">
+                    <h3>Manage lessons</h3>
+                    <p>Create and update training modules.</p>
+                    <button id="adminLoadLessons" class="secondary-btn">Load lessons</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminVideosCard">
+                    <h3>Manage videos</h3>
+                    <p>Organize video assets and chapters.</p>
+                    <button id="adminLoadVideos" class="secondary-btn">Load videos</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminQuizzesCard">
+                    <h3>Manage quiz questions</h3>
+                    <p>Build question banks and review responses.</p>
+                    <button id="adminLoadQuizzes" class="secondary-btn">Load quizzes</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminCertificatesCard">
+                    <h3>Manage certificates</h3>
+                    <p>Design completion credentials and tracking.</p>
+                    <button id="adminLoadCertificates" class="secondary-btn">Load certificates</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminAnalyticsCard">
+                    <h3>View analytics</h3>
+                    <p>Monitor learner engagement and performance.</p>
+                    <button id="adminLoadAnalytics" class="secondary-btn">Refresh analytics</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminExportCard">
+                    <h3>Export CSV / Excel</h3>
+                    <p>Download user and progress reports.</p>
+                    <button id="adminExportUsers" class="secondary-btn">Export users</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminNotificationsCard">
+                    <h3>Send notifications</h3>
+                    <p>Push announcements and reward alerts.</p>
+                    <button id="adminLoadNotifications" class="secondary-btn">Load notifications</button>
+                </article>
+                <article class="card admin-card admin-action-card" id="adminLeaderboardCard">
+                    <h3>Leaderboard management</h3>
+                    <p>Promote top performers and award badges.</p>
+                    <button id="adminRefreshLeaderboard" class="secondary-btn">Refresh leaderboard</button>
+                </article>
+            </div>
+
+            <div class="admin-panel">
+                <div class="admin-panel-row">
+                    <div class="card admin-panel-card">
+                        <h3>User directory</h3>
+                        <div class="table-scroll">
+                            <table id="adminUserTable">
+                                <thead>
+                                    <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card admin-panel-card">
+                        <h3>Analytics</h3>
+                        <div id="adminAnalyticsSummary" class="admin-summary"></div>
+                    </div>
+                </div>
+
+                <div class="admin-panel-row">
+                    <div class="card admin-panel-card">
+                        <h3>Create lesson</h3>
+                        <form id="adminLessonForm">
+                            <input name="title" placeholder="Title" required>
+                            <input name="level" placeholder="Level" value="Technical">
+                            <textarea name="description" placeholder="Description" required></textarea>
+                            <input name="video_url" placeholder="Video URL">
+                            <button type="submit" class="primary-btn">Save lesson</button>
+                        </form>
+                    </div>
+                    <div class="card admin-panel-card">
+                        <h3>Create video</h3>
+                        <form id="adminVideoForm">
+                            <input name="lesson_id" type="number" placeholder="Lesson ID">
+                            <input name="title" placeholder="Title" required>
+                            <input name="url" placeholder="Video URL" required>
+                            <input name="duration" placeholder="Duration">
+                            <button type="submit" class="primary-btn">Save video</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="admin-panel-row">
+                    <div class="card admin-panel-card">
+                        <h3>Create quiz question</h3>
+                        <form id="adminQuizForm">
+                            <input name="lesson_id" type="number" placeholder="Lesson ID">
+                            <input name="difficulty" placeholder="Level (Beginner, Intermediate, Advanced)" value="Beginner">
+                            <input name="question_type" placeholder="Question type (MCQ, Yes/No, True/False, Scenario)" value="MCQ">
+                            <textarea name="question" placeholder="Question" required></textarea>
+                            <textarea name="options" placeholder="Options (JSON array)" required>["Option A","Option B"]</textarea>
+                            <input name="answer" placeholder="Correct answer" required>
+                            <input name="image_url" placeholder="Optional image URL">
+                            <textarea name="explanation" placeholder="Explanation"></textarea>
+                            <textarea name="cybersecurity_tip" placeholder="Cybersecurity tip"></textarea>
+                            <input name="related_training" placeholder="Related training lesson">
+                            <button type="submit" class="primary-btn">Save quiz</button>
+                        </form>
+                    </div>
+                    <div class="card admin-panel-card">
+                        <h3>Create certificate</h3>
+                        <form id="adminCertificateForm">
+                            <input name="title" placeholder="Title" required>
+                            <textarea name="description" placeholder="Description" required></textarea>
+                            <textarea name="requirements" placeholder="Requirements"></textarea>
+                            <button type="submit" class="primary-btn">Save certificate</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="admin-panel-row">
+                    <div class="card admin-panel-card">
+                        <h3>Send notification</h3>
+                        <form id="adminNotificationForm">
+                            <input name="title" placeholder="Title" required>
+                            <textarea name="message" placeholder="Message" required></textarea>
+                            <input name="target" placeholder="Target (all or email)">
+                            <button type="submit" class="primary-btn">Send notification</button>
+                        </form>
+                    </div>
+                    <div class="card admin-panel-card">
+                        <h3>Status</h3>
+                        <p id="adminStatusMessage">Use the controls to manage the system.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="cookie-banner hidden" id="cookieBanner" role="dialog" aria-live="polite">
+        <p>We use cookies to improve the learning experience. By continuing, you accept our cookie policy.</p>
+        <div class="cookie-actions">
+            <button class="secondary-btn" id="declineCookies">Decline</button>
+            <button class="primary-btn" id="acceptCookies">Accept</button>
+        </div>
+    </div>
+
+    <div id="confettiOverlay" class="confetti-overlay hidden"></div>
+    <script src="script.js"></script>
+</body>
+
+</html>
